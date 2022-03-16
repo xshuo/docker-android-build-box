@@ -1,62 +1,54 @@
 FROM ubuntu:20.04
 
-ENV DEBIAN_FRONTEND="noninteractive" \
-    TERM=dumb \
-    DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND=noninteractive \
+    TERM=dumb
 
+# context print
 RUN echo "current shell is $SHELL"
 RUN ls -al /bin/sh
 RUN ls -al /bin/bash
 RUN rm /bin/sh && ln -sf /bin/bash /bin/sh
 RUN uname -a && uname -m
 
-ENV ANDROID_HOME="/opt/android-sdk" \
-    ANDROID_NDK="/opt/android-sdk/ndk" \
-    FLUTTER_HOME="/opt/flutter"
+# change to aliyun
+RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list
 
-# support amd64 and arm64
-RUN JDK_PLATFORM=$(if [ "$(uname -m)" = "aarch64" ]; then echo "arm64"; else echo "amd64"; fi) && \
-    echo export JDK_PLATFORM=$JDK_PLATFORM >> /etc/jdk.env && \
-    echo export JAVA_HOME="/usr/lib/jvm/java-8-openjdk-$JDK_PLATFORM/" >> /etc/jdk.env && \
-    echo . /etc/jdk.env >> /etc/bash.bashrc && \
-    echo . /etc/jdk.env >> /etc/profile
+RUN apt-get clean && apt-get update && apt install -y apt-utils
 
-ENV TZ=America/Los_Angeles
-
-# Get the latest version from https://developer.android.com/studio/index.html
-ENV ANDROID_COMMANDLINE_TOOLS_VERSION_CODE=8092744
-ENV ANDROID_COMMANDLINE_TOOLS_VERSION=latest
-ENV ANDROID_COMMANDLINE_TOOLS_URL= \
-    "https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_COMMANDLINE_TOOLS_VERSION_CODE}_${ANDROID_COMMANDLINE_TOOLS_VERSION}.zip"
-
-# nodejs version
-ENV NODE_VERSION="14.x"
+# set timezone
+ENV TZ=Asia/Shanghai
+RUN apt install -y tzdata \
+    && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime \
+    && echo ${TZ} > /etc/timezone \
+    && dpkg-reconfigure --frontend noninteractive tzdata
 
 # Set locale
 ENV LANG="en_US.UTF-8" \
     LANGUAGE="en_US.UTF-8" \
     LC_ALL="en_US.UTF-8"
+RUN apt-get install -y locales && locale-gen $LANG
 
-RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list
 
-RUN apt-get clean && \
-    apt-get update -qq && \
-    apt-get install -qq -y apt-utils locales && \
-    locale-gen $LANG
+ENV ANDROID_HOME="/opt/android-sdk" \
+    ANDROID_NDK="/opt/android-sdk/ndk" \
+    FLUTTER_HOME="/opt/flutter"
 
-# Variables must be references after they are created
-ENV ANDROID_SDK_HOME="$ANDROID_HOME"
-ENV ANDROID_NDK_HOME="$ANDROID_NDK"
+# java env
+# support amd64 and arm64
+RUN JDK_PLATFORM=$(if [ "$(uname -m)" = "aarch64" ]; then echo "arm64"; else echo "amd64"; fi) && \
+    echo export JDK_PLATFORM=$JDK_PLATFORM >> /etc/jdk.env && \
+    echo export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-$JDK_PLATFORM/" >> /etc/jdk.env && \
+    echo . /etc/jdk.env >> /etc/bash.bashrc && \
+    echo . /etc/jdk.env >> /etc/profile
 
-ENV PATH="$JAVA_HOME/bin:$PATH:$ANDROID_SDK_HOME/emulator:$ANDROID_SDK_HOME/tools/bin:$ANDROID_SDK_HOME/tools:$ANDROID_SDK_HOME/platform-tools:$ANDROID_NDK:$FLUTTER_HOME/bin:$FLUTTER_HOME/bin/cache/dart-sdk/bin"
+# nodejs version
+ENV NODE_VERSION="14.x"
 
 WORKDIR /tmp
 
 # Installing packages
 RUN apt-get update -qq > /dev/null && \
-    apt-get install -qq locales > /dev/null && \
-    locale-gen "$LANG" > /dev/null && \
-    apt-get install -qq --no-install-recommends \
+    apt-get install -y --no-install-recommends \
         autoconf \
         build-essential \
         curl \
@@ -84,13 +76,10 @@ RUN apt-get update -qq > /dev/null && \
         vim-tiny \
         wget \
         zip \
-        zlib1g-dev > /dev/null && \
+        zlib1g-dev && \
     echo "JVM directories: `ls -l /usr/lib/jvm/`" && \
-    . /etc/jdk.env && \
     echo "Java version (default):" && \
     java -version && \
-    echo "set timezone" && \
-    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone && \
     echo "nodejs, npm, cordova, ionic, react-native" && \
     curl -sL -k https://deb.nodesource.com/setup_${NODE_VERSION} \
         | bash - > /dev/null && \
@@ -119,6 +108,15 @@ RUN apt-get update -qq > /dev/null && \
     npm cache clean --force > /dev/null && \
     rm -rf /tmp/* /var/tmp/*
 
+
+ENV PATH="$JAVA_HOME/bin:$ANDROID_SDK/cmdline-tools/bin:$ANDROID_SDK/emulator:$ANDROID_SDK/tools/bin:$ANDROID_SDK/tools:$ANDROID_SDK/platform-tools:$ANDROID_NDK:$FLUTTER_HOME/bin:$FLUTTER_HOME/bin/cache/dart-sdk/bin:$PATH"
+
+#cmdline tools
+# Get the latest version from https://developer.android.com/studio/index.html
+ENV ANDROID_COMMANDLINE_TOOLS_VERSION_CODE=8092744
+ENV ANDROID_COMMANDLINE_TOOLS_VERSION=latest
+ENV ANDROID_COMMANDLINE_TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_COMMANDLINE_TOOLS_VERSION_CODE}_${ANDROID_COMMANDLINE_TOOLS_VERSION}.zip"
+
 # Install Android SDK
 # commandline tools
 # https://dl.google.com/android/repository/commandlinetools-linux-8092744_latest.zip
@@ -136,58 +134,46 @@ ENV ANDROID_SDK_MANAGER_BIN="$ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_ro
 # The `yes` is for accepting all non-standard tool licenses.
 RUN mkdir --parents "$ANDROID_HOME/.android/" && \
     echo '### User Sources for Android SDK Manager' > "$ANDROID_HOME/.android/repositories.cfg" && \
-    . /etc/jdk.env && \
     yes | $ANDROID_SDK_MANAGER_BIN --licenses > /dev/null
 
 # List all available packages.
 # redirect to a temp file `packages.txt` for later use and avoid show progress
-RUN . /etc/jdk.env && \
-    $ANDROID_SDK_MANAGER_BIN --list > packages.txt && \
-    cat packages.txt | grep -v '='
+RUN $ANDROID_SDK_MANAGER_BIN --list
 
 #
 # https://developer.android.com/studio/command-line/sdkmanager.html
 #
 RUN echo "platforms" && \
-. /etc/jdk.env && \
     yes | $ANDROID_SDK_MANAGER_BIN \
-        "platforms;android-31" \
         "platforms;android-30" \
-        "platforms;android-29" \
-        "platforms;android-28" \
-        "platforms;android-27" \
-        "platforms;android-26" > /dev/null
+        "platforms;android-31" \
+        "platforms;android-32" \
+	 > /dev/null
 
 RUN echo "platform tools" && \
-    . /etc/jdk.env && \
     yes | $ANDROID_SDK_MANAGER_BIN "platform-tools" > /dev/null
 
-RUN echo $(ls -l $ANDROID_HOME)
+RUN echo ls -l $ANDROID_HOME
 
-RUN echo "build tools 26-31" && \
-    . /etc/jdk.env && \
-    yes | $ANDROID_SDK_MANAGER_BIN \
-        "build-tools;31.0.0"
-        #"build-tools;30.0.0" "build-tools;30.0.2" "build-tools;30.0.3" \
-        #"build-tools;29.0.3" "build-tools;29.0.2" \
-        #"build-tools;28.0.3" "build-tools;28.0.2" \
-        #"build-tools;27.0.3" "build-tools;27.0.2" "build-tools;27.0.1" \
-        #"build-tools;26.0.2" "build-tools;26.0.1" "build-tools;26.0.0" > /dev/null
+RUN echo "build tools" && yes | $ANDROID_SDK_MANAGER_BIN \
+        "build-tools;30.0.3" \
+        "build-tools;31.0.0" \
+        "build-tools;32.0.0" \
+        > /dev/null
 
 # seems there is no emulator on arm64
 # Warning: Failed to find package emulator
 RUN echo "emulator" && \
     if [ "$(uname -m)" != "x86_64" ]; then echo "emulator only support Linux x86 64bit. skip for $(uname -m)"; exit 0; fi && \
-    . /etc/jdk.env && \
     yes | $ANDROID_SDK_MANAGER_BIN "emulator" > /dev/null
 
 # ndk-bundle does exist on arm64
-# RUN echo "NDK" && \
-#     yes | "$ANDROID_HOME"/tools/bin/sdkmanager "ndk-bundle" > /dev/null
 
 RUN echo "NDK" && \
-    . /etc/jdk.env && \
-    yes | $ANDROID_SDK_MANAGER_BIN "ndk;19.2.5345600" > /dev/null && \
+    yes | $ANDROID_SDK_MANAGER_BIN "ndk;19.2.5345600" > /dev/null
+
+RUN echo "cmake" && \
+    yes | $ANDROID_SDK_MANAGER_BIN "cmake;3.18.1" "cmake;3.10.2.4988404"
 
 # List sdk and ndk directory content
 RUN ls -l $ANDROID_HOME && \
