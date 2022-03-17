@@ -111,7 +111,7 @@ RUN apt-get update -qq > /dev/null && \
     rm -rf /tmp/* /var/tmp/*
 
 
-ENV PATH="$JAVA_HOME/bin:$ANDROID_SDK/cmdline-tools/bin:$ANDROID_SDK/emulator:$ANDROID_SDK/tools/bin:$ANDROID_SDK/tools:$ANDROID_SDK/platform-tools:$ANDROID_NDK:$FLUTTER_HOME/bin:$FLUTTER_HOME/bin/cache/dart-sdk/bin:$PATH"
+ENV PATH="$ANDROID_HOME/cmdline-tools/bin:$ANDROID_HOME/emulator:$ANDROID_HOME/tools/bin:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools:$ANDROID_NDK:$FLUTTER_HOME/bin:$FLUTTER_HOME/bin/cache/dart-sdk/bin:$PATH"
 
 #cmdline tools
 # Get the latest version from https://developer.android.com/studio/index.html
