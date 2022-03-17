@@ -191,7 +191,7 @@ RUN echo "Flutter sdk" && \
 
 # Copy sdk license agreement files.
 RUN mkdir -p $ANDROID_HOME/licenses
-COPY sdk/licenses/* $ANDROID_HOME/licenses/
+COPY licenses/* $ANDROID_HOME/licenses/
 
 # Create some jenkins required directory to allow this image run with Jenkins
 RUN mkdir -p /var/lib/jenkins/workspace && \
@@ -199,8 +199,6 @@ RUN mkdir -p /var/lib/jenkins/workspace && \
     chmod 777 /home/jenkins && \
     chmod 777 /var/lib/jenkins/workspace && \
     chmod -R 775 $ANDROID_HOME
-
-COPY Gemfile /Gemfile
 
 RUN echo "fastlane" && \
     cd / && \
@@ -222,26 +220,13 @@ RUN git clone https://github.com/jenv/jenv.git ~/.jenv && \
     jenv global 11 && \
     java -version
 
-COPY README.md /README.md
-
 ARG BUILD_DATE=""
-ARG SOURCE_BRANCH=""
-ARG SOURCE_COMMIT=""
-ARG DOCKER_TAG=""
 
-ENV BUILD_DATE=${BUILD_DATE} \
-    SOURCE_BRANCH=${SOURCE_BRANCH} \
-    SOURCE_COMMIT=${SOURCE_COMMIT} \
-    DOCKER_TAG=${DOCKER_TAG}
+ENV BUILD_DATE=${BUILD_DATE}
 
 WORKDIR /project
 
 # labels, see http://label-schema.org/
-LABEL maintainer="Ming Chen"
+LABEL maintainer="xieshuo@lixiang.com"
 LABEL org.label-schema.schema-version="1.0"
-LABEL org.label-schema.name="mingc/android-build-box"
-LABEL org.label-schema.version="${DOCKER_TAG}"
-LABEL org.label-schema.usage="/README.md"
-LABEL org.label-schema.docker.cmd="docker run --rm -v `pwd`:/project mingc/android-build-box bash -c 'cd /project; ./gradlew build'"
 LABEL org.label-schema.build-date="${BUILD_DATE}"
-LABEL org.label-schema.vcs-ref="${SOURCE_COMMIT}@${SOURCE_BRANCH}"
