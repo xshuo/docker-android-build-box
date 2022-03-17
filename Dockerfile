@@ -200,13 +200,6 @@ RUN mkdir -p /var/lib/jenkins/workspace && \
     chmod 777 /var/lib/jenkins/workspace && \
     chmod -R 775 $ANDROID_HOME
 
-RUN echo "fastlane" && \
-    cd / && \
-    gem install bundler --quiet --no-document > /dev/null && \
-    mkdir -p /.fastlane && \
-    chmod 777 /.fastlane && \
-    bundle install --quiet
-
 # Add jenv to control which version of java to use, default to 11.
 RUN git clone https://github.com/jenv/jenv.git ~/.jenv && \
     echo 'export PATH="$HOME/.jenv/bin:$PATH"' >> ~/.bash_profile && \
