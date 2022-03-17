@@ -33,6 +33,8 @@ ENV ANDROID_HOME="/opt/android-sdk" \
     ANDROID_NDK="/opt/android-sdk/ndk" \
     FLUTTER_HOME="/opt/flutter"
 
+ENV SDK_TEST_BASE_URL="https://mirrors.cloud.tencent.com/AndroidSDK/"
+
 # java env
 # support amd64 and arm64
 RUN JDK_PLATFORM=$(if [ "$(uname -m)" = "aarch64" ]; then echo "arm64"; else echo "amd64"; fi) && \
@@ -80,32 +82,32 @@ RUN apt-get update -qq > /dev/null && \
     echo "JVM directories: `ls -l /usr/lib/jvm/`" && \
     echo "Java version (default):" && \
     java -version && \
-    echo "nodejs, npm, cordova, ionic, react-native" && \
-    curl -sL -k https://deb.nodesource.com/setup_${NODE_VERSION} \
-        | bash - > /dev/null && \
-    apt-get install -qq nodejs > /dev/null && \
-    apt-get clean > /dev/null && \
-    curl -sS -k https://dl.yarnpkg.com/debian/pubkey.gpg \
-        | apt-key add - > /dev/null && \
-    echo "deb https://dl.yarnpkg.com/debian/ stable main" \
-        | tee /etc/apt/sources.list.d/yarn.list > /dev/null && \
-    apt-get update -qq > /dev/null && \
-    apt-get install -qq yarn > /dev/null && \
-    rm -rf /var/lib/apt/lists/ && \
-    npm install --quiet -g npm > /dev/null && \
-    npm install --quiet -g \
-        bower \
-        cordova \
-        eslint \
-        gulp \
-        ionic \
-        jshint \
-        karma-cli \
-        mocha \
-        node-gyp \
-        npm-check-updates \
-        react-native-cli > /dev/null && \
-    npm cache clean --force > /dev/null && \
+    #echo "nodejs, npm, cordova, ionic, react-native" && \
+    #curl -sL -k https://deb.nodesource.com/setup_${NODE_VERSION} \
+    #    | bash - > /dev/null && \
+    #apt-get install -qq nodejs > /dev/null && \
+    #apt-get clean > /dev/null && \
+    #curl -sS -k https://dl.yarnpkg.com/debian/pubkey.gpg \
+    #    | apt-key add - > /dev/null && \
+    #echo "deb https://dl.yarnpkg.com/debian/ stable main" \
+    #    | tee /etc/apt/sources.list.d/yarn.list > /dev/null && \
+    #apt-get update -qq > /dev/null && \
+    #apt-get install -qq yarn > /dev/null && \
+    #rm -rf /var/lib/apt/lists/ && \
+    #npm install --quiet -g npm > /dev/null && \
+    #npm install --quiet -g \
+    #    bower \
+    #    cordova \
+    #    eslint \
+    #    gulp \
+    #    ionic \
+    #    jshint \
+    #    karma-cli \
+    #    mocha \
+    #    node-gyp \
+    #    npm-check-updates \
+    #    react-native-cli > /dev/null && \
+    #npm cache clean --force > /dev/null && \
     rm -rf /tmp/* /var/tmp/*
 
 
